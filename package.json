@@ -1,0 +1,19 @@
+{
+  "name": "web-snake",
+  "version": "1.0.0",
+  "description": "A colorful, bold snake game built with vanilla HTML, CSS, and TypeScript, optimized for 1920x1080 conference presentations.",
+  "main": "game.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vite": "^7.1.12"
+  }
+}
