@@ -109,13 +109,13 @@ class SnakeGame {
         // Use both keydown and keyup to catch very brief virtual key presses
         const handleKeyEvent = (e: KeyboardEvent) => {
             // Try multiple properties to identify the key (for virtual/simulated keyboards)
-            const keyIdentifier = e.code || e.key || e.keyCode?.toString() || 'unknown';
+            const keyIdentifier = e.code || e.key || e.keyCode?.toString() || e.which?.toString() || 'unknown';
             
-            // Log all key events for debugging
-            console.log(`[${e.type}] code: "${e.code}", key: "${e.key}", keyCode: ${e.keyCode}, which: ${e.which}, identifier: "${keyIdentifier}"`);
+            // Log all key events for debugging with all available properties
+            console.log(`[${e.type}] code: "${e.code}", key: "${e.key}", keyCode: ${e.keyCode}, which: ${e.which}, identifier: "${keyIdentifier}", target: ${e.target}`);
             
             // Check for Space using multiple properties
-            if (e.code === 'Space' || e.key === ' ' || e.key === 'Spacebar' || e.keyCode === 32) {
+            if (e.code === 'Space' || e.key === ' ' || e.key === 'Spacebar' || e.keyCode === 32 || e.which === 32) {
                 e.preventDefault();
                 if (e.type === 'keydown') {
                     this.toggleGame();
@@ -144,10 +144,11 @@ class SnakeGame {
                 '39': { x: 1, y: 0 }    // Right
             };
 
-            // Try to find direction using code, key, or keyCode
+            // Try to find direction using code, key, keyCode, or which
             let newDirection = directions[e.code] || 
                               directions[e.key] || 
-                              directions[e.keyCode?.toString() || ''];
+                              directions[e.keyCode?.toString() || ''] ||
+                              directions[e.which?.toString() || ''];
             
             if (newDirection) {
                 e.preventDefault();
@@ -178,9 +179,20 @@ class SnakeGame {
             }
         };
 
-        // Listen to both keydown AND keyup to catch instantaneous virtual keypresses
-        document.addEventListener('keydown', handleKeyEvent);
-        document.addEventListener('keyup', handleKeyEvent);
+        // Listen at multiple levels and with capture phase
+        // Some virtual keyboards might only trigger at window level
+        const targets = [window, document, document.body];
+        const eventTypes = ['keydown', 'keyup'] as const;
+        
+        targets.forEach(target => {
+            eventTypes.forEach(eventType => {
+                // Add both capture (true) and bubble (false) phase listeners
+                target.addEventListener(eventType, handleKeyEvent as EventListener, true);  // Capture phase
+                target.addEventListener(eventType, handleKeyEvent as EventListener, false); // Bubble phase
+            });
+        });
+        
+        console.log('✓ Key event listeners registered on window, document, and body (capture + bubble phase)');
     }
 
     private toggleGame(): void {
