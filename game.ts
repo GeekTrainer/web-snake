@@ -108,10 +108,14 @@ class SnakeGame {
     private setupControls(): void {
         // Use both keydown and keyup to catch very brief virtual key presses
         const handleKeyEvent = (e: KeyboardEvent) => {
-            // Log all key events for debugging
-            console.log(`[${e.type}] Key: ${e.code}, Time: ${new Date().toISOString()}`);
+            // Try multiple properties to identify the key (for virtual/simulated keyboards)
+            const keyIdentifier = e.code || e.key || e.keyCode?.toString() || 'unknown';
             
-            if (e.code === 'Space') {
+            // Log all key events for debugging
+            console.log(`[${e.type}] code: "${e.code}", key: "${e.key}", keyCode: ${e.keyCode}, which: ${e.which}, identifier: "${keyIdentifier}"`);
+            
+            // Check for Space using multiple properties
+            if (e.code === 'Space' || e.key === ' ' || e.key === 'Spacebar' || e.keyCode === 32) {
                 e.preventDefault();
                 if (e.type === 'keydown') {
                     this.toggleGame();
@@ -121,14 +125,30 @@ class SnakeGame {
 
             if (!this.state.gameRunning || this.state.gamePaused) return;
 
+            // Map multiple possible key identifiers for arrow keys
             const directions: { [key: string]: Position } = {
+                // Using e.code
                 'ArrowUp': { x: 0, y: -1 },
                 'ArrowDown': { x: 0, y: 1 },
                 'ArrowLeft': { x: -1, y: 0 },
-                'ArrowRight': { x: 1, y: 0 }
+                'ArrowRight': { x: 1, y: 0 },
+                // Using e.key (modern)
+                'Up': { x: 0, y: -1 },
+                'Down': { x: 0, y: 1 },
+                'Left': { x: -1, y: 0 },
+                'Right': { x: 1, y: 0 },
+                // Using e.keyCode (legacy)
+                '38': { x: 0, y: -1 },  // Up
+                '40': { x: 0, y: 1 },   // Down
+                '37': { x: -1, y: 0 },  // Left
+                '39': { x: 1, y: 0 }    // Right
             };
 
-            const newDirection = directions[e.code];
+            // Try to find direction using code, key, or keyCode
+            let newDirection = directions[e.code] || 
+                              directions[e.key] || 
+                              directions[e.keyCode?.toString() || ''];
+            
             if (newDirection) {
                 e.preventDefault();
                 // Get the last direction in the queue, or current direction if queue is empty
@@ -148,12 +168,12 @@ class SnakeGame {
                     // Limit queue size to prevent excessive buffering
                     if (this.state.directionQueue.length < 4) {
                         this.state.directionQueue.push(newDirection);
-                        console.log(`✓ Direction queued: ${e.code}, Queue length: ${this.state.directionQueue.length}`);
+                        console.log(`✓ Direction queued: ${keyIdentifier}, Queue length: ${this.state.directionQueue.length}`);
                     } else {
-                        console.log(`✗ Queue full, ignoring: ${e.code}`);
+                        console.log(`✗ Queue full, ignoring: ${keyIdentifier}`);
                     }
                 } else {
-                    console.log(`✗ Direction rejected: ${e.code} (already queued: ${alreadyQueued}, opposite: ${lastDirection.x + newDirection.x === 0 && lastDirection.y + newDirection.y === 0})`);
+                    console.log(`✗ Direction rejected: ${keyIdentifier} (already queued: ${alreadyQueued}, opposite: ${lastDirection.x + newDirection.x === 0 && lastDirection.y + newDirection.y === 0})`);
                 }
             }
         };
