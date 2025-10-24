@@ -12,7 +12,6 @@ interface GameState {
     score: number;
     highScore: number;
     gameRunning: boolean;
-    gamePaused: boolean;
 }
 
 class SnakeGame {
@@ -55,8 +54,7 @@ class SnakeGame {
             directionQueue: [],
             score: 0,
             highScore: this.loadHighScore(),
-            gameRunning: false,
-            gamePaused: false
+            gameRunning: false
         };
         
         this.spawnFood();
@@ -117,13 +115,13 @@ class SnakeGame {
             // Check for Space using multiple properties
             if (e.code === 'Space' || e.key === ' ' || e.key === 'Spacebar' || e.keyCode === 32 || e.which === 32) {
                 e.preventDefault();
-                if (e.type === 'keydown') {
-                    this.toggleGame();
+                if (e.type === 'keydown' && !this.state.gameRunning) {
+                    this.startGame();
                 }
                 return;
             }
 
-            if (!this.state.gameRunning || this.state.gamePaused) return;
+            if (!this.state.gameRunning) return;
 
             // Map multiple possible key identifiers for arrow keys
             const directions: { [key: string]: Position } = {
@@ -195,18 +193,8 @@ class SnakeGame {
         console.log('✓ Key event listeners registered on window, document, and body (capture + bubble phase)');
     }
 
-    private toggleGame(): void {
-        if (!this.state.gameRunning) {
-            this.startGame();
-        } else {
-            this.state.gamePaused = !this.state.gamePaused;
-            this.updateGameStatus(this.state.gamePaused ? 'PAUSED' : '');
-        }
-    }
-
     private startGame(): void {
         this.state.gameRunning = true;
-        this.state.gamePaused = false;
         this.updateGameStatus('');
         
         if (this.gameLoop) {
@@ -214,10 +202,8 @@ class SnakeGame {
         }
         
         this.gameLoop = window.setInterval(() => {
-            if (!this.state.gamePaused) {
-                this.update();
-                this.draw();
-            }
+            this.update();
+            this.draw();
         }, this.gameSpeed);
     }
 
