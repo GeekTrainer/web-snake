@@ -106,10 +106,16 @@ class SnakeGame {
     }
 
     private setupControls(): void {
-        document.addEventListener('keydown', (e) => {
+        // Use both keydown and keyup to catch very brief virtual key presses
+        const handleKeyEvent = (e: KeyboardEvent) => {
+            // Log all key events for debugging
+            console.log(`[${e.type}] Key: ${e.code}, Time: ${new Date().toISOString()}`);
+            
             if (e.code === 'Space') {
                 e.preventDefault();
-                this.toggleGame();
+                if (e.type === 'keydown') {
+                    this.toggleGame();
+                }
                 return;
             }
 
@@ -130,16 +136,31 @@ class SnakeGame {
                     ? this.state.directionQueue[this.state.directionQueue.length - 1]
                     : this.state.direction;
                 
-                // Only add if it's not opposite to the last direction and not already the same
-                if (lastDirection.x + newDirection.x !== 0 || 
-                    lastDirection.y + newDirection.y !== 0) {
+                // Check if this direction is already in the queue
+                const alreadyQueued = this.state.directionQueue.some(d => 
+                    d.x === newDirection.x && d.y === newDirection.y
+                );
+                
+                // Only add if it's not opposite to the last direction and not already queued
+                if (!alreadyQueued && 
+                    (lastDirection.x + newDirection.x !== 0 || 
+                     lastDirection.y + newDirection.y !== 0)) {
                     // Limit queue size to prevent excessive buffering
-                    if (this.state.directionQueue.length < 3) {
+                    if (this.state.directionQueue.length < 4) {
                         this.state.directionQueue.push(newDirection);
+                        console.log(`✓ Direction queued: ${e.code}, Queue length: ${this.state.directionQueue.length}`);
+                    } else {
+                        console.log(`✗ Queue full, ignoring: ${e.code}`);
                     }
+                } else {
+                    console.log(`✗ Direction rejected: ${e.code} (already queued: ${alreadyQueued}, opposite: ${lastDirection.x + newDirection.x === 0 && lastDirection.y + newDirection.y === 0})`);
                 }
             }
-        });
+        };
+
+        // Listen to both keydown AND keyup to catch instantaneous virtual keypresses
+        document.addEventListener('keydown', handleKeyEvent);
+        document.addEventListener('keyup', handleKeyEvent);
     }
 
     private toggleGame(): void {
