@@ -8,6 +8,7 @@ interface GameState {
     food: Position;
     direction: Position;
     nextDirection: Position;
+    directionQueue: Position[];
     score: number;
     highScore: number;
     gameRunning: boolean;
@@ -51,6 +52,7 @@ class SnakeGame {
             food: { x: 0, y: 0 },
             direction: { x: 1, y: 0 },
             nextDirection: { x: 1, y: 0 },
+            directionQueue: [],
             score: 0,
             highScore: this.loadHighScore(),
             gameRunning: false,
@@ -123,9 +125,18 @@ class SnakeGame {
             const newDirection = directions[e.code];
             if (newDirection) {
                 e.preventDefault();
-                if (this.state.direction.x + newDirection.x !== 0 || 
-                    this.state.direction.y + newDirection.y !== 0) {
-                    this.state.nextDirection = newDirection;
+                // Get the last direction in the queue, or current direction if queue is empty
+                const lastDirection = this.state.directionQueue.length > 0 
+                    ? this.state.directionQueue[this.state.directionQueue.length - 1]
+                    : this.state.direction;
+                
+                // Only add if it's not opposite to the last direction and not already the same
+                if (lastDirection.x + newDirection.x !== 0 || 
+                    lastDirection.y + newDirection.y !== 0) {
+                    // Limit queue size to prevent excessive buffering
+                    if (this.state.directionQueue.length < 3) {
+                        this.state.directionQueue.push(newDirection);
+                    }
                 }
             }
         });
@@ -158,7 +169,15 @@ class SnakeGame {
     }
 
     private update(): void {
-        this.state.direction = { ...this.state.nextDirection };
+        // Process direction from queue if available
+        if (this.state.directionQueue.length > 0) {
+            const queuedDirection = this.state.directionQueue.shift()!;
+            // Double-check it's not opposite to current direction (for safety)
+            if (this.state.direction.x + queuedDirection.x !== 0 || 
+                this.state.direction.y + queuedDirection.y !== 0) {
+                this.state.direction = queuedDirection;
+            }
+        }
         
         const head = this.state.snake[0];
         const newHead: Position = {
@@ -298,6 +317,7 @@ class SnakeGame {
             this.state.snake = this.createInitialSnake();
             this.state.direction = { x: 1, y: 0 };
             this.state.nextDirection = { x: 1, y: 0 };
+            this.state.directionQueue = [];
             this.state.score = 0;
             this.spawnFood();
             this.draw();
